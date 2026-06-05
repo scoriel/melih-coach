@@ -65,8 +65,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         await update.message.reply_text(reply)
 
-    except Exception as e:
-        await update.message.reply_text("Bir hata oluştu, tekrar dene.")
+        except Exception as e:
+        await update.message.reply_text(f"Hata: {str(e)}")
+
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
