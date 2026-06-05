@@ -1,12 +1,12 @@
 import os
-import anthropic
+from groq import Groq
 from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
-client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+client = Groq(api_key=GROQ_API_KEY)
 
 SYSTEM_PROMPT = "Sen Melih Celebi'nin fitness kocusun. 18 yas, 183 cm, 130 kg, hedef 90 kg, bench 120 kg. Turkce konus, kisa net cevaplar ver, sert ama destekleyici ol."
 
@@ -21,13 +21,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if len(conversation_history[user_id]) > 20:
         conversation_history[user_id] = conversation_history[user_id][-20:]
     try:
-        response = client.messages.create(
-            model="claude-sonnet-4-5",
+        messages = [{"role": "system", "content": SYSTEM_PROMPT}] + conversation_history[user_id]
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
             max_tokens=1000,
-            system=SYSTEM_PROMPT,
-            messages=conversation_history[user_id]
+            messages=messages
         )
-        reply = response.content[0].text
+        reply = response.choices[0].message.content
         conversation_history[user_id].append({"role": "assistant", "content": reply})
         await update.message.reply_text(reply)
     except Exception as e:
