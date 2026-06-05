@@ -1,7 +1,7 @@
 import os
 from groq import Groq
 from supabase import create_client
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import Update
 from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters, ContextTypes
 
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
@@ -18,12 +18,12 @@ conversation_history = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        "Melih! Koçun burada. 130'dan 90'a gidiyoruz.\n\n"
+        "Melih! Kocun burada. 130dan 90a gidiyoruz.\n\n"
         "Komutlar:\n"
-        "/kilo 129.5 - Kilo gir\n"
-        "/olcum - Ölçüm gir\n"
-        "/ilerleme - İlerlemeyi gör\n\n"
-        "Ya da direkt yaz, konuşalım!"
+        "/kilo 129.5 - Kilo gir (web panele de kaydeder)\n"
+        "/ilerleme - Ilerlemeyi gor\n"
+        "/olcum 47 140 120 119 - Kol Omuz Gogus Bel gir\n\n"
+        "Ya da direkt yaz, konusalim!"
     )
 
 async def kilo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -32,14 +32,36 @@ async def kilo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         supabase.table("weights").insert({"weight": weight}).execute()
         lost = round(130 - weight, 1)
         remaining = round(weight - 90, 1)
+        pct = round((lost / 40) * 100, 1)
         await update.message.reply_text(
             f"Kaydedildi! {weight} kg\n"
             f"Verilen: {lost} kg\n"
             f"Kalan: {remaining} kg\n"
-            f"Hedefe {remaining} kg kaldı! 💪"
+            f"Ilerleme: %{pct}\n"
+            f"Web panelde de gozukuyor!"
         )
     except:
         await update.message.reply_text("Kullanim: /kilo 129.5")
+
+async def olcum(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        args = context.args
+        data = {}
+        if len(args) >= 1: data['kol'] = float(args[0])
+        if len(args) >= 2: data['omuz'] = float(args[1])
+        if len(args) >= 3: data['gogus'] = float(args[2])
+        if len(args) >= 4: data['bel'] = float(args[3])
+        if len(args) >= 5: data['kalca'] = float(args[4])
+        if len(args) >= 6: data['quads'] = float(args[5])
+        if len(args) >= 7: data['baldir'] = float(args[6])
+        supabase.table("measurements").insert(data).execute()
+        msg = "Olcumler kaydedildi!\n"
+        for k, v in data.items():
+            msg += f"{k.capitalize()}: {v} cm\n"
+        msg += "Web panelde de gozukuyor!"
+        await update.message.reply_text(msg)
+    except Exception as e:
+        await update.message.reply_text("Kullanim: /olcum 47 140 120 119\n(Kol Omuz Gogus Bel)")
 
 async def ilerleme(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -87,6 +109,7 @@ if __name__ == "__main__":
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("kilo", kilo))
     app.add_handler(CommandHandler("ilerleme", ilerleme))
+    app.add_handler(CommandHandler("olcum", olcum))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     print("Bot calisiyor...")
     app.run_polling()
