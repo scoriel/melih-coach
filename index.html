@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melih Koç Panel</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #080810; color: #f0f0f0; font-family: 'Space Grotesk', sans-serif; min-height: 100vh; }
+  .header { background: linear-gradient(135deg, #0f0f1a, #1a1a2e); padding: 20px 16px 0; border-bottom: 1px solid #ffffff10; }
+  .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .header-name { font-size: 22px; font-weight: 800; }
+  .header-sub { font-size: 11px; color: #ffffff50; letter-spacing: 3px; text-transform: uppercase; }
+  .streak-badge { background: #22c55e15; border: 1px solid #22c55e40; border-radius: 12px; padding: 8px 14px; text-align: center; }
+  .streak-badge .num { font-size: 20px; font-weight: 800; color: #22c55e; }
+  .streak-badge .lbl { font-size: 9px; color: #22c55e; letter-spacing: 2px; }
+  .tabs { display: flex; gap: 4px; overflow-x: auto; }
+  .tab { padding: 10px 16px; border: none; background: transparent; color: #ffffff50; font-size: 13px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; font-family: 'Space Grotesk', sans-serif; transition: all 0.2s; }
+  .tab.active { color: #fff; border-bottom: 2px solid #3b82f6; background: #ffffff08; border-radius: 8px 8px 0 0; }
+  .content { padding: 16px; max-width: 600px; margin: 0 auto; }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .stat-card { background: #ffffff08; border: 1px solid #ffffff10; border-radius: 14px; padding: 14px 10px; text-align: center; }
+  .stat-card .val { font-size: 18px; font-weight: 800; margin-bottom: 2px; }
+  .stat-card .lbl { font-size: 10px; color: #ffffff50; letter-spacing: 1px; }
+  .progress-bar-wrap { margin-bottom: 20px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 11px; color: #ffffff50; margin-bottom: 6px; }
+  .progress-pct { color: #3b82f6; font-weight: 700; }
+  .progress-track { height: 8px; background: #ffffff10; border-radius: 100px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #22c55e); border-radius: 100px; transition: width 0.8s ease; }
+  .card { background: #ffffff06; border: 1px solid #ffffff10; border-radius: 16px; padding: 16px; margin-bottom: 14px; }
+  .card-title { font-size: 11px; color: #ffffff40; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 14px; }
+  .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+  .input-field { flex: 1; padding: 12px 14px; border-radius: 12px; border: 1px solid #ffffff20; background: #ffffff10; color: #fff; font-size: 14px; font-family: 'Space Grotesk', sans-serif; outline: none; }
+  .input-field::placeholder { color: #ffffff40; }
+  .input-field:focus { border-color: #3b82f6; }
+  .btn { padding: 12px 18px; border-radius: 12px; border: none; font-weight: 700; font-size: 14px; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+  .btn-primary { background: linear-gradient(135deg, #3b82f6, #1d4ed8); color: #fff; }
+  .btn-green { background: linear-gradient(135deg, #22c55e, #16a34a); color: #fff; }
+  .measure-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+  .measure-input-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .measure-label { font-size: 11px; color: #ffffff60; }
+  .history-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #ffffff08; }
+  .history-item:last-child { border-bottom: none; }
+  .history-date { font-size: 12px; color: #ffffff50; }
+  .history-val { font-size: 16px; font-weight: 700; }
+  .profile-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #ffffff06; border-radius: 12px; border: 1px solid #ffffff08; margin-bottom: 8px; }
+  .profile-row .lbl { font-size: 13px; color: #ffffff60; }
+  .profile-row .val { font-size: 14px; font-weight: 700; }
+  .page { display: none; }
+  .page.active { display: block; }
+  canvas { max-height: 220px; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-sub">Kişisel Koç</div>
+      <div class="header-name">Melih Çelebi</div>
+    </div>
+    <div class="streak-badge">
+      <div class="lbl">STREAK</div>
+      <div class="num">🔥 <span id="streakNum">0</span></div>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('ozet',this)">📊 Özet</button>
+    <button class="tab" onclick="showTab('kilo',this)">⚖️ Kilo</button>
+    <button class="tab" onclick="showTab('olcum',this)">📏 Ölçüm</button>
+    <button class="tab" onclick="showTab('profil',this)">👤 Profil</button>
+  </div>
+</div>
+
+<div class="content">
+  <div class="page active" id="page-ozet">
+    <br>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="val" style="color:#f59e0b" id="statCurrent">— kg</div><div class="lbl">ŞU AN</div></div>
+      <div class="stat-card"><div class="val" style="color:#22c55e" id="statLost">— kg</div><div class="lbl">VERİLEN</div></div>
+      <div class="stat-card"><div class="val" style="color:#3b82f6" id="statRemain">— kg</div><div class="lbl">KALAN</div></div>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-labels">
+        <span>130 kg</span>
+        <span class="progress-pct" id="progressPct">0% tamamlandı</span>
+        <span>🎯 90 kg</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div class="card"><div class="card-title">Kilo Grafiği</div><canvas id="weightChart"></canvas></div>
+    <div class="card"><div class="card-title">Son Ölçümler</div><div id="lastMeasurements">Henüz ölçüm yok.</div></div>
+  </div>
+
+  <div class="page" id="page-kilo">
+    <br>
+    <div class="card">
+      <div class="card-title">Yeni Kilo Gir</div>
+      <div class="input-row">
+        <input class="input-field" type="number" id="weightInput" placeholder="Örn: 129.5" step="0.1">
+        <button class="btn btn-green" onclick="saveWeight()">Kaydet</button>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Kilo Geçmişi</div><div id="weightHistory">Yükleniyor...</div></div>
+  </div>
+
+  <div class="page" id="page-olcum">
+    <br>
+    <div class="card">
+      <div class="card-title">Vücut Ölçümleri Gir (cm)</div>
+      <div class="measure-grid">
+        <div class="measure-input-wrap"><span class="measure-label">Kol</span><input class="input-field" type="number" id="m_kol" placeholder="47"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Omuz</span><input class="input-field" type="number" id="m_omuz" placeholder="140"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Göğüs</span><input class="input-field" type="number" id="m_gogus" placeholder="120"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Bel</span><input class="input-field" type="number" id="m_bel" placeholder="119"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Kalça</span><input class="input-field" type="number" id="m_kalca" placeholder="115"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Quads</span><input class="input-field" type="number" id="m_quads" placeholder="70"></div>
+        <div class="measure-input-wrap"><span class="measure-label">Baldır</span><input class="input-field" type="number" id="m_baldir" placeholder="45"></div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveMeasurement()">Ölçümleri Kaydet</button>
+    </div>
+    <div class="card"><div class="card-title">Ölçüm Geçmişi</div><div id="measureHistory">Yükleniyor...</div></div>
+  </div>
+
+  <div class="page" id="page-profil">
+    <br>
+    <div class="profile-row"><span class="lbl">Ad Soyad</span><span class="val">Melih Çelebi</span></div>
+    <div class="profile-row"><span class="lbl">Yaş</span><span class="val">18</span></div>
+    <div class="profile-row"><span class="lbl">Boy</span><span class="val">183 cm</span></div>
+    <div class="profile-row"><span class="lbl">Başlangıç Kilosu</span><span class="val">130 kg</span></div>
+    <div class="profile-row"><span class="lbl">Hedef Kilo</span><span class="val">90 kg</span></div>
+    <div class="profile-row"><span class="lbl">Bench Press PR</span><span class="val">120 kg</span></div>
+    <div class="profile-row"><span class="lbl">Başlangıç Kol</span><span class="val">47 cm</span></div>
+    <div class="profile-row"><span class="lbl">Başlangıç Bel</span><span class="val">119 cm</span></div>
+    <div class="profile-row"><span class="lbl">Başlangıç Omuz</span><span class="val">140 cm</span></div>
+    <div class="profile-row"><span class="lbl">Yağ Oranı</span><span class="val">~32-33%</span></div>
+    <div class="profile-row"><span class="lbl">Supplement</span><span class="val">Kreatin</span></div>
+    <div class="profile-row"><span class="lbl">Hedef Bölüm</span><span class="val">Elektrik-Elektronik Müh.</span></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'SUPABASE_URL_BURAYA'; https://zchzspcbyczbuckxjdli.supabase.co
+const SUPABASE_KEY = 'SUPABASE_KEY_BURAYA'; eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjaHpzcGNieWN6YnVja3hqZGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2NzI2OTUsImV4cCI6MjA5NjI0ODY5NX0.FW-WnlJwOEIYUGK2U0v8RIWppT5i0nCEUV3VQlqNdnE
+const headers = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' };
+
+async function fetchWeights() {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/weights?select=*&order=created_at.asc', { headers });
+  return await res.json();
+}
+async function fetchMeasurements() {
+  const res = await fetch(SUPABASE_URL + '/rest/v1/measurements?select=*&order=created_at.desc&limit=10', { headers });
+  return await res.json();
+}
+async function saveWeight() {
+  const val = parseFloat(document.getElementById('weightInput').value);
+  if (!val || val < 50 || val > 250) return alert('Gecerli bir kilo gir!');
+  await fetch(SUPABASE_URL + '/rest/v1/weights', { method: 'POST', headers, body: JSON.stringify({ weight: val }) });
+  document.getElementById('weightInput').value = '';
+  await loadAll();
+  alert('Kilo kaydedildi!');
+}
+async function saveMeasurement() {
+  const data = {
+    kol: parseFloat(document.getElementById('m_kol').value) || null,
+    omuz: parseFloat(document.getElementById('m_omuz').value) || null,
+    gogus: parseFloat(document.getElementById('m_gogus').value) || null,
+    bel: parseFloat(document.getElementById('m_bel').value) || null,
+    kalca: parseFloat(document.getElementById('m_kalca').value) || null,
+    quads: parseFloat(document.getElementById('m_quads').value) || null,
+    baldir: parseFloat(document.getElementById('m_baldir').value) || null,
+  };
+  await fetch(SUPABASE_URL + '/rest/v1/measurements', { method: 'POST', headers, body: JSON.stringify(data) });
+  ['m_kol','m_omuz','m_gogus','m_bel','m_kalca','m_quads','m_baldir'].forEach(id => document.getElementById(id).value = '');
+  await loadAll();
+  alert('Olcumler kaydedildi!');
+}
+
+let chartInst = null;
+async function loadAll() {
+  const weights = await fetchWeights();
+  const measurements = await fetchMeasurements();
+
+  if (weights.length > 0) {
+    const latest = weights[weights.length - 1].weight;
+    const lost = (130 - latest).toFixed(1);
+    const remain = (latest - 90).toFixed(1);
+    const pct = Math.max(0, ((130 - latest) / 40 * 100)).toFixed(1);
+    document.getElementById('statCurrent').textContent = latest + ' kg';
+    document.getElementById('statLost').textContent = (lost > 0 ? '-' : '+') + Math.abs(lost) + ' kg';
+    document.getElementById('statRemain').textContent = remain + ' kg';
+    document.getElementById('progressPct').textContent = pct + '% tamamlandi';
+    document.getElementById('progressFill').style.width = Math.min(pct, 100) + '%';
+    document.getElementById('streakNum').textContent = weights.length;
+  }
+
+  if (weights.length > 0) {
+    const labels = weights.map(w => (w.date || w.created_at?.split('T')[0]));
+    const data = weights.map(w => w.weight);
+    if (chartInst) chartInst.destroy();
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    chartInst = new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label: 'Kilo', data, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', tension: 0.4, pointBackgroundColor: '#3b82f6', pointRadius: 4, fill: true }] },
+      options: { responsive: true, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#ffffff50', font: { size: 10 } }, grid: { color: '#ffffff08' } }, y: { ticks: { color: '#ffffff50' }, grid: { color: '#ffffff08' }, min: 85, max: 135 } } }
+    });
+  }
+
+  const wh = document.getElementById('weightHistory');
+  if (weights.length === 0) { wh.innerHTML = 'Henuz kilo girisi yok.'; }
+  else {
+    const rev = [...weights].reverse().slice(0, 10);
+    wh.innerHTML = rev.map((w, i) => {
+      const prev = rev[i + 1];
+      const diff = prev ? (w.weight - prev.weight).toFixed(1) : null;
+      const diffStr = diff ? `<span style="font-size:11px;margin-left:6px;color:${diff < 0 ? '#22c55e' : '#ef4444'}">${diff > 0 ? '+' : ''}${diff}</span>` : '';
+      return `<div class="history-item"><span class="history-date">${w.date || w.created_at?.split('T')[0]}</span><span class="history-val" style="color:#f59e0b">${w.weight} kg${diffStr}</span></div>`;
+    }).join('');
+  }
+
+  const lm = document.getElementById('lastMeasurements');
+  if (measurements.length === 0) { lm.innerHTML = 'Henuz olcum yok.'; }
+  else {
+    const m = measurements[0];
+    const fields = [['kol','KOL'],['omuz','OMUZ'],['gogus','GOGUS'],['bel','BEL'],['kalca','KALCA'],['quads','QUADS'],['baldir','BALDIR']];
+    lm.innerHTML = `<div style="font-size:11px;color:#ffffff50;margin-bottom:8px">${m.date||m.created_at?.split('T')[0]}</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${fields.filter(([k])=>m[k]).map(([k,l])=>`<div style="background:#ffffff08;padding:10px;border-radius:10px"><div style="font-size:10px;color:#ffffff50">${l}</div><div style="font-weight:700">${m[k]} cm</div></div>`).join('')}</div>`;
+  }
+
+  const mh = document.getElementById('measureHistory');
+  if (measurements.length === 0) { mh.innerHTML = 'Henuz olcum yok.'; }
+  else {
+    mh.innerHTML = measurements.map(m => {
+      const fields = [['kol','Kol','#3b82f6'],['omuz','Omuz','#3b82f6'],['gogus','Gogus','#3b82f6'],['bel','Bel','#f59e0b'],['kalca','Kalca','#3b82f6'],['quads','Quads','#3b82f6'],['baldir','Baldir','#3b82f6']];
+      return `<div style="padding:12px 0;border-bottom:1px solid #ffffff08"><div style="font-size:11px;color:#ffffff50;margin-bottom:6px">${m.date||m.created_at?.split('T')[0]}</div><div style="display:flex;flex-wrap:wrap;gap:6px">${fields.filter(([k])=>m[k]).map(([k,l,c])=>`<span style="background:${c}15;border:1px solid ${c}30;padding:4px 8px;border-radius:8px;font-size:12px">${l}: ${m[k]}cm</span>`).join('')}</div></div>`;
+    }).join('');
+  }
+}
+
+function showTab(tab, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  el.classList.add('active');
+}
+
+loadAll();
+</script>
+</body>
+</html>
