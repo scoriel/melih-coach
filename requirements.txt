@@ -1,3 +1,5 @@
 groq
 python-telegram-bot
+supabase
+
 
